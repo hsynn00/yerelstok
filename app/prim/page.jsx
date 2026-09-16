@@ -1,10 +1,12 @@
+JavaScript
 'use client';
-import RewardAd from '@/components/RewardAd';
+
+import RewardDashboard from '../../components/RewardDashboard';
 
 export default function RewardPage() {
   return (
     <div className="py-6">
-      <RewardAd />
+      <RewardDashboard />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
-import ShopDashboard from '@/components/ShopDashboard';
+
+import ShopDashboard from '../../components/ShopDashboard';
 
 export default function ShopPage() {
   return (
