@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MessageSquare, Send, Bot, X } from 'lucide-react';
-import { db } from '../../lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 
 export default function HeaderAndChat() {
