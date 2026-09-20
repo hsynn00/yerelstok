@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MessageSquare, Send, Bot, X } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { db } from '../../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 
 export default function HeaderAndChat() {
@@ -58,7 +58,6 @@ export default function HeaderAndChat() {
         </button>
       ) : (
         <div className="bg-white w-80 sm:w-96 rounded-2xl shadow-2xl border border-slate-200 flex flex-col h-[450px] overflow-hidden">
-          {/* BOT HEADER */}
           <div className="bg-emerald-800 text-white p-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Bot className="w-5 h-5" />
@@ -69,7 +68,6 @@ export default function HeaderAndChat() {
             </button>
           </div>
 
-          {/* SOHBET AKIŞI */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 text-xs">
             {messages.map(msg => (
               <div
@@ -92,7 +90,6 @@ export default function HeaderAndChat() {
             )}
           </div>
 
-          {/* SOHBET GİRİŞ ALANI */}
           <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-100 flex gap-2">
             <input
               type="text"
