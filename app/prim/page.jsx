@@ -1,4 +1,3 @@
-JavaScript
 'use client';
 
 import RewardDashboard from '../../components/RewardDashboard';
