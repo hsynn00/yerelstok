@@ -1,6 +1,7 @@
 import './globals.css';
 import Link from 'next/link';
 import { Store, Search, Gift, Home } from 'lucide-react';
+import HeaderAndChat from '../components/HeaderAndChat';
 
 export const metadata = {
   title: 'YerelStok - Yakındaki Esnaf Stokları',
@@ -14,9 +15,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr">
-      <body className="bg-slate-50 min-h-screen text-slate-800">
-        {/* ÜST GEZİNTİ MENÜSÜ (NAVBAR) */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <body className="bg-slate-50 min-h-screen text-slate-800 relative">
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 font-black text-xl text-emerald-800">
               <Store className="w-6 h-6 text-emerald-700" />
@@ -40,8 +40,10 @@ export default function RootLayout({
           </div>
         </header>
 
-        {/* SAYFA İÇERİKLERİ */}
         <main>{children}</main>
+
+        {/* AI CANLI STOK SOHBET BOTU */}
+        <HeaderAndChat />
       </body>
     </html>
   );

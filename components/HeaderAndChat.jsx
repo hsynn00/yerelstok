@@ -23,7 +23,6 @@ export default function HeaderAndChat() {
     setLoading(true);
 
     try {
-      // Firebase Firestore'dan stokları çekip arama yapıyoruz
       const querySnapshot = await getDocs(collection(db, 'products'));
       const products = querySnapshot.docs.map(doc => doc.data());
       
@@ -50,16 +49,14 @@ export default function HeaderAndChat() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {!isOpen && (
+      {!isOpen ? (
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-emerald-700 hover:bg-emerald-800 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-105 flex items-center justify-center"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white p-4 rounded-full shadow-2xl transition-transform hover:scale-105 flex items-center justify-center cursor-pointer"
         >
           <MessageSquare className="w-6 h-6" />
         </button>
-      )}
-
-      {isOpen && (
+      ) : (
         <div className="bg-white w-80 sm:w-96 rounded-2xl shadow-2xl border border-slate-200 flex flex-col h-[450px] overflow-hidden">
           {/* BOT HEADER */}
           <div className="bg-emerald-800 text-white p-4 flex justify-between items-center">
@@ -67,7 +64,7 @@ export default function HeaderAndChat() {
               <Bot className="w-5 h-5" />
               <span className="font-bold text-sm">YerelStok AI Asistan</span>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white">
+            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white cursor-pointer">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -102,11 +99,11 @@ export default function HeaderAndChat() {
               placeholder="Ürün veya stok sor..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="flex-1 text-xs bg-slate-100 border-none rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-600 outline-none"
+              className="flex-1 text-xs bg-slate-100 border-none rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-600 outline-none text-slate-800"
             />
             <button
               type="submit"
-              className="bg-emerald-700 text-white p-2 rounded-xl hover:bg-emerald-800 transition-colors"
+              className="bg-emerald-700 text-white p-2 rounded-xl hover:bg-emerald-800 transition-colors cursor-pointer"
             >
               <Send className="w-4 h-4" />
             </button>
