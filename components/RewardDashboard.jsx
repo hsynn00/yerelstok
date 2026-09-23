@@ -1,162 +1,183 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { PlayCircle, Award, KeyRound, Wallet, ArrowUpRight, CheckCircle, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { db } from '../lib/firebase';
+import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { Lock, CheckCircle2, Clock, MapPin, Store, AlertCircle } from 'lucide-react';
 
 export default function RewardDashboard() {
-  const [adCount, setAdCount] = useState(3); // Örnek olarak 3 izlenmiş başlasın
-  const [isWatching, setIsWatching] = useState(false);
-  const [promoCode, setPromoCode] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(86400); // 24 Saat (Saniye)
-  const [iban, setIban] = useState('');
-  const [balance] = useState(150); // Kullanıcının biriken prim bakiyesi (TL)
-  const [withdrawStatus, setWithdrawStatus] = useState(null);
+  const [shops, setShops] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUserId] = useState('user_123'); // İleride gerçek kullanıcı ID'si gelecek
 
-  // Reklam İzleme Simülasyonu (3 saniye bekletir)
-  const handleWatchAd = () => {
-    if (adCount >= 10) return;
-    setIsWatching(true);
-    setTimeout(() => {
-      setAdCount((prev) => {
-        const next = prev + 1;
-        if (next === 10) {
-          generatePromoCode();
+  // Firestore'dan dükkanları ve ziyaret durumlarını çek
+  const fetchShops = async () => {
+    try {
+      setLoading(true);
+      const querySnapshot = await getDocs(collection(db, 'shops'));
+      const shopList = querySnapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data()
+      }));
+      setShops(shopList);
+    } catch (error) {
+      console.error('Dükkanlar yüklenirken hata oluştu:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchShops();
+  }, []);
+
+  // Dükkan Durumunu Hesapla (Açık, Rezerve, Kilitli)
+  const getShopStatus = (shop) => {
+    const now = new Date().getTime();
+
+    // 1. Ziyaret Tamamlanmış ve 24 saatlik Cooldown süresi dolmamış
+    if (shop.lastVisitedAt) {
+      const lastVisitTime = shop.lastVisitedAt.seconds * 1000;
+      const hoursSinceVisit = (now - lastVisitTime) / (1000 * 60 * 60);
+      if (hoursSinceVisit < 24) {
+        const remainingHours = Math.ceil(24 - hoursSinceVisit);
+        return { status: 'VISITED', message: `Ziyaret Edildi (${remainingHours}s kilitli)`, isLocked: true };
+      }
+    }
+
+    // 2. Bir primci tarafımdan 2 saatliğine rezerve edilmiş
+    if (shop.reservedAt && shop.reservedBy) {
+      const reserveTime = shop.reservedAt.seconds * 1000;
+      const hoursSinceReserve = (now - reserveTime) / (1000 * 60 * 60);
+      if (hoursSinceReserve < 2) {
+        if (shop.reservedBy === currentUserId) {
+          return { status: 'MY_RESERVATION', message: 'Sizin Rezervasyonunuz (Süre: <2s)', isLocked: false };
         }
-        return next;
+        return { status: 'RESERVED', message: 'Başka Bir Primci Yolda', isLocked: true };
+      }
+    }
+
+    // 3. Ziyarete Açık
+    return { status: 'AVAILABLE', message: 'Ziyarete Açık', isLocked: false };
+  };
+
+  // Görev Kapma / Rezerve Etme
+  const handleReserve = async (shopId) => {
+    try {
+      const shopRef = doc(db, 'shops', shopId);
+      await updateDoc(shopRef, {
+        reservedBy: currentUserId,
+        reservedAt: Timestamp.now()
       });
-      setIsWatching(false);
-    }, 2500);
+      alert('Dükkan 2 saatliğine sizin için rezerve edildi! Lütfen adrese gidip ziyareti tamamlayın.');
+      fetchShops();
+    } catch (error) {
+      console.error('Rezervasyon hatası:', error);
+    }
   };
 
-  // 24 Saatlik Geçici Kod Üretici
-  const generatePromoCode = () => {
-    const randomCode = 'YSTK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    setPromoCode(randomCode);
-  };
-
-  // IBAN Çekim Talebi
-  const handleWithdraw = (e) => {
-    e.preventDefault();
-    if (!iban || iban.length < 15) return;
-    setWithdrawStatus('Talep Alındı! Prim bakiyeniz 24 saat içinde hesabınıza aktarılacaktır.');
+  // Ziyaret Tamamlama
+  const handleCompleteVisit = async (shopId) => {
+    try {
+      const shopRef = doc(db, 'shops', shopId);
+      await updateDoc(shopRef, {
+        lastVisitedAt: Timestamp.now(),
+        reservedBy: null,
+        reservedAt: null
+      });
+      alert('Ziyaret başarıyla onaylandı ve prim hesabınıza aktarıldı. Dükkan 24 saat kilitlendi.');
+      fetchShops();
+    } catch (error) {
+      console.error('Ziyaret tamamlama hatası:', error);
+    }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* KART 1: REKLAM İZLEME & KOD ÜRETİCİ */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center font-bold">
-                <Award className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-800 text-base">Reklam İzle & İndirim Kodu Kazan</h2>
-                <p className="text-xs text-slate-500">10 reklam izle, 24 saat geçerli dükkan indirim kodunu kap!</p>
-              </div>
-            </div>
-            <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full">
-              {adCount} / 10 İzlendi
-            </span>
-          </div>
-
-          {/* İLERLEME ÇUBUĞU */}
-          <div className="space-y-2">
-            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-              <div
-                className="bg-emerald-700 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${(adCount / 10) * 100}%` }}
-              ></div>
-            </div>
-            <p className="text-[11px] text-slate-400 text-right">
-              {adCount < 10 ? `${10 - adCount} reklam daha izlemeniz gerekiyor.` : 'Tebrikler! Kodunuz Hazır.'}
-            </p>
-          </div>
-
-          {/* REKLAM İZLEME BUTONU VEYA ÜRETİLEN KOD */}
-          {adCount < 10 ? (
-            <button
-              onClick={handleWatchAd}
-              disabled={isWatching}
-              className={`w-full py-4 rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 ${
-                isWatching
-                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                  : 'bg-emerald-700 hover:bg-emerald-800 text-white'
-              }`}
-            >
-              <PlayCircle className="w-5 h-5" />
-              {isWatching ? 'Reklam Oynatılıyor...' : 'Reklam İzle (+1)'}
-            </button>
-          ) : (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-2">
-              <div className="flex items-center justify-center gap-2 text-emerald-800 font-bold text-sm">
-                <KeyRound className="w-4 h-4" /> 24 Saatlik Geçici Prim Kodunuz:
-              </div>
-              <div className="text-2xl font-mono font-extrabold text-emerald-900 tracking-wider bg-white py-2 px-4 rounded-xl border border-emerald-200 inline-block shadow-sm">
-                {promoCode || 'YSTK-98A2F1'}
-              </div>
-              <div className="flex items-center justify-center gap-1 text-[11px] text-emerald-700 font-medium pt-1">
-                <Clock className="w-3.5 h-3.5" /> Süre: 23 saat 59 dakika kaldı
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* KART 2: BAKİYE & IBAN PRİM ÇEKİM MODÜLÜ */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-            <div className="w-10 h-10 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center font-bold">
-              <Wallet className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="font-bold text-slate-800 text-base">Prim Bakiyem</h2>
-              <p className="text-xs text-slate-500">İzlemelerden biriken ödül</p>
-            </div>
-          </div>
-
-          {/* BAKİYE GÖSTERGESİ */}
-          <div className="bg-slate-900 text-white p-4 rounded-xl flex justify-between items-center shadow-inner">
-            <div>
-              <p className="text-xs text-slate-400 font-medium">Çekilebilir Tutar</p>
-              <p className="text-2xl font-bold text-emerald-400">{balance} TL</p>
-            </div>
-            <span className="bg-emerald-900/60 text-emerald-300 text-[10px] px-2.5 py-1 rounded-full border border-emerald-700">
-              Aktif Bakiye
-            </span>
-          </div>
-
-          {/* IBAN FORMU */}
-          <form onSubmit={handleWithdraw} className="space-y-3 pt-1">
-            <div>
-              <label className="text-xs font-semibold text-slate-600">IBAN Adresiniz</label>
-              <input
-                type="text"
-                value={iban}
-                onChange={(e) => setIban(e.target.value)}
-                placeholder="TR00 0000 0000 0000 0000 0000 00"
-                className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 font-mono"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5"
-            >
-              <ArrowUpRight className="w-4 h-4" /> Bakiyeyi IBAN'a Aktar
-            </button>
-          </form>
-
-          {/* BİLDİRİM / MESAJ */}
-          {withdrawStatus && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-start gap-2">
-              <CheckCircle className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
-              <span>{withdrawStatus}</span>
-            </div>
-          )}
-        </div>
-
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+          <Store className="w-6 h-6 text-emerald-700" /> Saha Ziyareti & Prim Görevleri
+        </h1>
+        <p className="text-slate-500 text-xs mt-1">
+          Esnafları ziyaret ederek canlı stok kontrolü yapın ve prim kazanın. Aynı dükkana birden fazla primci gidemez.
+        </p>
       </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-slate-400 text-sm">Ziyaret noktaları yükleniyor...</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {shops.map((shop) => {
+            const { status, message, isLocked } = getShopStatus(shop);
+
+            return (
+              <div
+                key={shop.id}
+                className={`p-5 rounded-2xl border transition-all ${
+                  isLocked
+                    ? 'bg-slate-50 border-slate-200 opacity-75'
+                    : 'bg-white border-slate-200 hover:border-emerald-500 shadow-sm'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-bold text-slate-800">{shop.name || 'Örnek Esnaf Dükkanı'}</h3>
+                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
+                      <MapPin className="w-3.5 h-3.5" /> {shop.address || 'Sanayi Sitesi No: 12'}
+                    </p>
+                  </div>
+
+                  {/* Rozetler */}
+                  <span
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                      status === 'VISITED'
+                        ? 'bg-slate-200 text-slate-700'
+                        : status === 'RESERVED'
+                        ? 'bg-amber-100 text-amber-800'
+                        : status === 'MY_RESERVATION'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}
+                  >
+                    {isLocked ? <Lock className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                    {message}
+                  </span>
+                </div>
+
+                {/* Buton İşlemleri */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                  {status === 'AVAILABLE' && (
+                    <button
+                      onClick={() => handleReserve(shop.id)}
+                      className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      Görevi Kap (2s Rezerve Et)
+                    </button>
+                  )}
+
+                  {status === 'MY_RESERVATION' && (
+                    <button
+                      onClick={() => handleCompleteVisit(shop.id)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Ziyareti Tamamla
+                    </button>
+                  )}
+
+                  {isLocked && (
+                    <button
+                      disabled
+                      className="px-4 py-2 bg-slate-200 text-slate-400 rounded-xl text-xs font-semibold cursor-not-allowed flex items-center gap-1.5"
+                    >
+                      <Lock className="w-3.5 h-3.5" /> Ziyarete Kapalı
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
