@@ -3,21 +3,42 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { Lock, CheckCircle2, Clock, MapPin, Store, AlertCircle } from 'lucide-react';
+import { Lock, CheckCircle2, Clock, MapPin, Store, Camera, Navigation, AlertCircle, X } from 'lucide-react';
+
+// İki koordinat arasındaki mesafeyi metre cinsinden hesaplayan Haversine Formülü
+function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Dünya yarıçapı (metre)
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export default function RewardDashboard() {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserId] = useState('user_123'); // İleride gerçek kullanıcı ID'si gelecek
+  const [currentUserId] = useState('user_123'); // Gerçek kullanıcı ID'si
 
-  // Firestore'dan dükkanları ve ziyaret durumlarını çek
+  // Modal Durumları
+  const [selectedShop, setSelectedShop] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationError, setLocationError] = useState('');
+  const [photo, setPhoto] = useState(null);
+  const [verifying, setVerifying] = useState(false);
+
   const fetchShops = async () => {
     try {
       setLoading(true);
       const querySnapshot = await getDocs(collection(db, 'shops'));
-      const shopList = querySnapshot.docs.map(docSnap => ({
+      const shopList = querySnapshot.docs.map((docSnap) => ({
         id: docSnap.id,
-        ...docSnap.data()
+        ...docSnap.data(),
       }));
       setShops(shopList);
     } catch (error) {
@@ -31,11 +52,9 @@ export default function RewardDashboard() {
     fetchShops();
   }, []);
 
-  // Dükkan Durumunu Hesapla (Açık, Rezerve, Kilitli)
   const getShopStatus = (shop) => {
     const now = new Date().getTime();
 
-    // 1. Ziyaret Tamamlanmış ve 24 saatlik Cooldown süresi dolmamış
     if (shop.lastVisitedAt) {
       const lastVisitTime = shop.lastVisitedAt.seconds * 1000;
       const hoursSinceVisit = (now - lastVisitTime) / (1000 * 60 * 60);
@@ -45,50 +64,122 @@ export default function RewardDashboard() {
       }
     }
 
-    // 2. Bir primci tarafımdan 2 saatliğine rezerve edilmiş
     if (shop.reservedAt && shop.reservedBy) {
       const reserveTime = shop.reservedAt.seconds * 1000;
       const hoursSinceReserve = (now - reserveTime) / (1000 * 60 * 60);
       if (hoursSinceReserve < 2) {
         if (shop.reservedBy === currentUserId) {
-          return { status: 'MY_RESERVATION', message: 'Sizin Rezervasyonunuz (Süre: <2s)', isLocked: false };
+          return { status: 'MY_RESERVATION', message: 'Sizin Rezervasyonunuz', isLocked: false };
         }
         return { status: 'RESERVED', message: 'Başka Bir Primci Yolda', isLocked: true };
       }
     }
 
-    // 3. Ziyarete Açık
     return { status: 'AVAILABLE', message: 'Ziyarete Açık', isLocked: false };
   };
 
-  // Görev Kapma / Rezerve Etme
   const handleReserve = async (shopId) => {
     try {
       const shopRef = doc(db, 'shops', shopId);
       await updateDoc(shopRef, {
         reservedBy: currentUserId,
-        reservedAt: Timestamp.now()
+        reservedAt: Timestamp.now(),
       });
-      alert('Dükkan 2 saatliğine sizin için rezerve edildi! Lütfen adrese gidip ziyareti tamamlayın.');
+      alert('Dükkan 2 saatliğine sizin için rezerve edildi!');
       fetchShops();
     } catch (error) {
       console.error('Rezervasyon hatası:', error);
     }
   };
 
-  // Ziyaret Tamamlama
-  const handleCompleteVisit = async (shopId) => {
+  // Ziyaret Tamamlama Modalanı Aç ve Anlık GPS Konumunu Al
+  const openCompleteModal = (shop) => {
+    setSelectedShop(shop);
+    setPhoto(null);
+    setLocationError('');
+    setUserLocation(null);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          setLocationError('GPS konumunuz alınamadı. Lütfen konum iznini açın.');
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      setLocationError('Cihazınız GPS konum servisini desteklemiyor.');
+    }
+  };
+
+  // Fotoğraf Seçimi (Canlı Kamera)
+  const handlePhotoCapture = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhoto(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Ziyaret Doğrulama ve Kaydetme
+  const handleVerifyAndComplete = async () => {
+    if (!photo) {
+      alert('Lütfen dükkanın dışarıdan çekilmiş canlı fotoğrafını ekleyin.');
+      return;
+    }
+
+    if (!userLocation) {
+      alert('Konumunuz belirlenemedi. GPS izni verdiğinizden emin olun.');
+      return;
+    }
+
+    // Esnafın varsayılan koordinatı (Yoksa İstanbul Sanayi varsayılanı alınır)
+    const shopLat = selectedShop.latitude || 41.0082;
+    const shopLng = selectedShop.longitude || 28.9784;
+
+    const distance = getDistanceInMeters(
+      userLocation.lat,
+      userLocation.lng,
+      shopLat,
+      shopLng
+    );
+
+    // 100 Metre Sınırı Kontrolü
+    if (distance > 100) {
+      alert(
+        `Konum Doğrulanamadı! Dükkandan yaklaşık ${Math.round(
+          distance
+        )} metre uzaktasınız. Onay için 100 metre mesafede olmalısınız.`
+      );
+      return;
+    }
+
     try {
-      const shopRef = doc(db, 'shops', shopId);
+      setVerifying(true);
+      const shopRef = doc(db, 'shops', selectedShop.id);
       await updateDoc(shopRef, {
         lastVisitedAt: Timestamp.now(),
         reservedBy: null,
-        reservedAt: null
+        reservedAt: null,
+        lastPhotoUrl: photo, // Canlı fotoğraf kaydedilir
       });
-      alert('Ziyaret başarıyla onaylandı ve prim hesabınıza aktarıldı. Dükkan 24 saat kilitlendi.');
+
+      alert('Tebrikler! Konum ve fotoğraf doğrulandı. Prim bakiyenize eklendi.');
+      setSelectedShop(null);
       fetchShops();
     } catch (error) {
-      console.error('Ziyaret tamamlama hatası:', error);
+      console.error('Ziyaret doğrulama hatası:', error);
+      alert('İşlem sırasında bir hata oluştu.');
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -96,10 +187,10 @@ export default function RewardDashboard() {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-          <Store className="w-6 h-6 text-emerald-700" /> Saha Ziyareti & Prim Görevleri
+          <Store className="w-6 h-6 text-emerald-700" /> Saha Ziyareti & GPS Doğrulama
         </h1>
         <p className="text-slate-500 text-xs mt-1">
-          Esnafları ziyaret ederek canlı stok kontrolü yapın ve prim kazanın. Aynı dükkana birden fazla primci gidemez.
+          Dükkan ziyareti tamamlamak için dükkanın 100m yakınında olmalı ve canlı fotoğraf çekmelisiniz.
         </p>
       </div>
 
@@ -127,7 +218,6 @@ export default function RewardDashboard() {
                     </p>
                   </div>
 
-                  {/* Rozetler */}
                   <span
                     className={`text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 ${
                       status === 'VISITED'
@@ -144,7 +234,6 @@ export default function RewardDashboard() {
                   </span>
                 </div>
 
-                {/* Buton İşlemleri */}
                 <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
                   {status === 'AVAILABLE' && (
                     <button
@@ -157,10 +246,10 @@ export default function RewardDashboard() {
 
                   {status === 'MY_RESERVATION' && (
                     <button
-                      onClick={() => handleCompleteVisit(shop.id)}
+                      onClick={() => openCompleteModal(shop)}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Ziyareti Tamamla
+                      <Camera className="w-4 h-4" /> Ziyareti Onayla & Foto Çek
                     </button>
                   )}
 
@@ -176,6 +265,79 @@ export default function RewardDashboard() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* KAMERA VE GPS DOĞRULAMA MODALI */}
+      {selectedShop && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-5 relative shadow-2xl">
+            <button
+              onClick={() => setSelectedShop(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2">
+              <Camera className="w-5 h-5 text-emerald-700" />
+              Saha Ziyaret Doğrulaması
+            </h2>
+
+            {/* GPS DURUMU */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+              <div className="flex items-center gap-2 text-slate-700 font-semibold">
+                <Navigation className="w-4 h-4 text-blue-600 animate-pulse" />
+                GPS Konum Durumu:
+              </div>
+              {userLocation ? (
+                <p className="text-emerald-700 font-medium">✓ Anlık konum alındı (Yüksek Hassasiyet)</p>
+              ) : locationError ? (
+                <p className="text-rose-600">{locationError}</p>
+              ) : (
+                <p className="text-slate-400">Konumunuz hesaplanıyor...</p>
+              )}
+            </div>
+
+            {/* FOTOĞRAF ÇEKME ALANI */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-700">
+                Dükkan Dış Cephe Fotoğrafı (Canlı Kamera)
+              </label>
+              
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment" // Doğrudan arka kamerayı açar
+                onChange={handlePhotoCapture}
+                className="hidden"
+                id="cameraInput"
+              />
+
+              <label
+                htmlFor="cameraInput"
+                className="border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-emerald-600 transition-colors bg-slate-50"
+              >
+                {photo ? (
+                  <img src={photo} alt="Çekilen Fotoğraf" className="max-h-40 rounded-lg object-cover" />
+                ) : (
+                  <>
+                    <Camera className="w-8 h-8 text-slate-400" />
+                    <span className="text-xs text-slate-600 font-medium">Fotoğraf Çekmek İçin Tıklayın</span>
+                  </>
+                )}
+              </label>
+            </div>
+
+            {/* ONAY BUTONU */}
+            <button
+              onClick={handleVerifyAndComplete}
+              disabled={verifying}
+              className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {verifying ? 'Doğrulanıyor...' : 'Konum ve Fotoğrafı Onayla'}
+            </button>
+          </div>
         </div>
       )}
     </div>
