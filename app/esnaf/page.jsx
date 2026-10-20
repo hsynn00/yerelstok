@@ -224,4 +224,62 @@ export default function MerchantPage() {
                     {p.count} {p.unit}
                   </span>
                   <button
-                    onClick={()
+                    onClick={() => handleDeleteProduct(p.id)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                    title="Ürünü Sil"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CANLI MÜŞTERİ TALEPLERİ */}
+        <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm">
+          <h2 className="font-extrabold text-base text-[#12355b] mb-1">Gelen Canlı Stok Soruları</h2>
+          <p className="text-xs text-[#5b6f82] mb-4">Anlık müşteri sorularını tek dokunuşla yanıtlayın.</p>
+
+          <div className="space-y-3">
+            {requests.map((r) => (
+              <div key={r.id} className={`p-3.5 rounded-xl border transition-all ${r.answered ? 'bg-slate-50 border-slate-200 opacity-50' : 'bg-[#f4f7fb] border-slate-200'}`}>
+                <h3 className="font-bold text-xs text-[#18314c]">{r.name}</h3>
+                <p className="text-xs text-[#5b6f82] mt-1">{r.query}</p>
+
+                {!r.answered ? (
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <button
+                      onClick={() => handleAnswerRequest(r.id)}
+                      className="py-1.5 bg-[#12805c] hover:bg-[#0f6b4d] text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                      VAR
+                    </button>
+                    <button
+                      onClick={() => handleAnswerRequest(r.id)}
+                      className="py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                      YOK
+                    </button>
+                  </div>
+                ) : (
+                  <span className="inline-block mt-2 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                    Yanıtlandı
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* DÜKKAN ADRES VE NUMARA DÜZENLEME MODALI */}
+      <MerchantEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        shopData={shopData}
+        onSave={(newData) => setShopData(newData)}
+      />
+    </div>
+  );
+}
