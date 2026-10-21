@@ -1,121 +1,160 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, User, Mail, Phone, Bell, Save, CheckCircle2 } from 'lucide-react';
+import { Settings, User, Mail, Lock, Save, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [formData, setFormData] = useState({
+  const [profileData, setProfileData] = useState({
     fullName: 'Ahmet Yılmaz',
     email: 'ahmet@yilmazoto.com',
-    phone: '0532 555 11 22',
-    smsNotify: true,
-    whatsappNotify: true,
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
-  const [saved, setSaved] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleProfileUpdate = (e) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setToastMsg('Profil ve e-posta bilgileri başarıyla güncellendi.');
+    setTimeout(() => setToastMsg(''), 3000);
+  };
+
+  const handlePasswordChange = (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+
+    if (!profileData.currentPassword) {
+      setErrorMsg('Lütfen mevcut şifrenizi girin.');
+      return;
+    }
+    if (profileData.newPassword.length < 6) {
+      setErrorMsg('Yeni şifre en az 6 karakter olmalıdır.');
+      return;
+    }
+    if (profileData.newPassword !== profileData.confirmPassword) {
+      setErrorMsg('Yeni şifreler birbiriyle eşleşmiyor!');
+      return;
+    }
+
+    setToastMsg('Şifreniz başarıyla değiştirildi.');
+    setProfileData({ ...profileData, currentPassword: '', newPassword: '', confirmPassword: '' });
+    setTimeout(() => setToastMsg(''), 3000);
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
+    <div className="max-w-xl mx-auto space-y-6 pb-12">
+      {/* PROFİL & E-POSTA BİLGİLERİ */}
       <div className="bg-white p-6 rounded-2xl border border-[#dfe8f1] shadow-sm">
         <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
           <div className="p-2.5 bg-[#eaf1f7] text-[#12355b] rounded-xl">
-            <Settings className="w-6 h-6" />
+            <User className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-extrabold text-lg text-[#12355b]">Dükkan Ayarları</h1>
-            <p className="text-xs text-[#5b6f82]">Profil ve bildirim tercihlerinizi güvenle güncelleyin.</p>
+            <h1 className="font-extrabold text-lg text-[#12355b]">Hesap & Profil Ayarları</h1>
+            <p className="text-xs text-[#5b6f82]">Ad, soyad ve e-posta adresinizi güncelleyin.</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs">
+        <form onSubmit={handleProfileUpdate} className="mt-5 space-y-4 text-xs">
           <div>
             <label className="block text-[#18314c] font-bold mb-1">Ad Soyad</label>
-            <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="text"
-                required
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full pl-9 p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#12355b]"
-              />
-            </div>
+            <input
+              type="text"
+              required
+              value={profileData.fullName}
+              onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#12355b]"
+            />
           </div>
 
           <div>
             <label className="block text-[#18314c] font-bold mb-1">E-posta Adresi</label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full pl-9 p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#12355b]"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[#18314c] font-bold mb-1">Telefon Numarası</label>
-            <div className="relative">
-              <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full pl-9 p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#12355b]"
-              />
-            </div>
-          </div>
-
-          <div className="border-t border-slate-100 pt-4 space-y-3">
-            <h3 className="font-bold text-[#12355b] flex items-center gap-1.5">
-              <Bell className="w-4 h-4" /> Bildirim Tercihleri
-            </h3>
-
-            <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <span className="font-semibold text-[#18314c]">SMS Bildirimleri</span>
-              <input
-                type="checkbox"
-                checked={formData.smsNotify}
-                onChange={(e) => setFormData({ ...formData, smsNotify: e.target.checked })}
-                className="w-4 h-4 accent-[#12805c] cursor-pointer"
-              />
-            </div>
-
-            <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <span className="font-semibold text-[#18314c]">WhatsApp Bildirimleri</span>
-              <input
-                type="checkbox"
-                checked={formData.whatsappNotify}
-                onChange={(e) => setFormData({ ...formData, whatsappNotify: e.target.checked })}
-                className="w-4 h-4 accent-[#12805c] cursor-pointer"
-              />
-            </div>
+            <input
+              type="email"
+              required
+              value={profileData.email}
+              onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#12355b]"
+            />
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 bg-[#12805c] hover:bg-[#0f6b4d] text-white font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 mt-2"
+            className="w-full py-2.5 bg-[#12805c] hover:bg-[#0f6b4d] text-white font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
           >
-            <Save className="w-4 h-4" /> Değişiklikleri Kaydet
+            <Save className="w-4 h-4" /> Bilgileri Güncelle
           </button>
         </form>
-
-        {saved && (
-          <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 text-[#12805c] rounded-xl text-xs font-bold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" /> Dükkan ayarları başarıyla kaydedildi.
-          </div>
-        )}
       </div>
+
+      {/* ŞİFRE DEĞİŞTİRME KISMI */}
+      <div className="bg-white p-6 rounded-2xl border border-[#dfe8f1] shadow-sm">
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+          <div className="p-2.5 bg-[#fff1e4] text-[#f58220] rounded-xl">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="font-extrabold text-lg text-[#12355b]">Şifre Değiştir</h2>
+            <p className="text-xs text-[#5b6f82]">Güvenliğiniz için şifrenizi düzenli olarak yenileyin.</p>
+          </div>
+        </div>
+
+        <form onSubmit={handlePasswordChange} className="mt-5 space-y-3 text-xs">
+          <div>
+            <label className="block text-[#18314c] font-bold mb-1">Mevcut Şifre</label>
+            <input
+              type="password"
+              value={profileData.currentPassword}
+              onChange={(e) => setProfileData({ ...profileData, currentPassword: e.target.value })}
+              placeholder="••••••••"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#12355b]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[#18314c] font-bold mb-1">Yeni Şifre</label>
+              <input
+                type="password"
+                value={profileData.newPassword}
+                onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
+                placeholder="••••••••"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#12355b]"
+              />
+            </div>
+            <div>
+              <label className="block text-[#18314c] font-bold mb-1">Yeni Şifre (Tekrar)</label>
+              <input
+                type="password"
+                value={profileData.confirmPassword}
+                onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
+                placeholder="••••••••"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#12355b]"
+              />
+            </div>
+          </div>
+
+          {errorMsg && (
+            <p className="text-rose-600 font-bold text-[11px]">{errorMsg}</p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full py-2.5 bg-[#12355b] hover:bg-[#0d2744] text-white font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
+          >
+            <ShieldCheck className="w-4 h-4" /> Şifreyi Güncelle
+          </button>
+        </form>
+      </div>
+
+      {/* TOAST BİLDİRİMİ */}
+      {toastMsg && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-[#12805c] rounded-xl text-xs font-bold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4" /> {toastMsg}
+        </div>
+      )}
     </div>
   );
 }

@@ -4,18 +4,18 @@ import { useState } from 'react';
 import {
   ShieldCheck,
   Lock,
-  Users,
-  Package,
-  Search,
-  Activity,
-  CheckCircle2,
-  XCircle,
+  Building2,
   MessageSquare,
+  LayoutGrid,
   Megaphone,
   Ban,
-  LayoutGrid,
-  Building2,
-  LogOut
+  LogOut,
+  Coins,
+  Download,
+  CheckCircle2,
+  XCircle,
+  CreditCard,
+  TrendingUp
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -23,14 +23,20 @@ export default function AdminDashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginError, setLoginError] = useState(false);
 
-  // Örnek Admin Verileri
-  const [verifications, setVerifications] = useState([
-    { id: 1, name: 'Arda Yapı Market', doc: 'Vergi levhası ve VKN doğrulaması bekliyor.', status: 'PENDING' },
-    { id: 2, name: 'Usta Elektrik', doc: 'T.C. Kimlik ve dükkan ruhsatı yüklendi.', status: 'PENDING' },
+  // YÖNETİCİ DİNAMİK FİYAT AYARLARI
+  const [pricing, setPricing] = useState({
+    baseReward: 50,      // Saha Görev Primi (TL)
+    urgentReward: 75,    // Acil Saha Görev Primi (TL)
+    merchantPackage: 250 // Esnaf Aylık Üyelik Fiyatı (TL)
+  });
+
+  // PRİM ÇEKİM TALEPLERİ
+  const [payoutRequests, setPayoutRequests] = useState([
+    { id: 1, user: 'Ahmet Yılmaz', iban: 'TR32 0006 2000 0000 1234 5678 90', amount: 325, date: '20.10.2026', status: 'PENDING' },
+    { id: 2, user: 'Selin Kaya', iban: 'TR10 0001 5000 0000 9876 5432 10', amount: 500, date: '19.10.2026', status: 'PENDING' },
+    { id: 3, user: 'Mehmet Demir', iban: 'TR88 0006 4000 0000 5555 4444 33', amount: 200, date: '18.10.2026', status: 'APPROVED' },
   ]);
 
-  const [announcement, setAnnouncement] = useState('');
-  const [replyText, setReplyText] = useState('');
   const [toastMsg, setToastMsg] = useState('');
 
   const triggerToast = (msg) => {
@@ -48,16 +54,28 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleVerifyAction = (id, action) => {
-    setVerifications(verifications.map(v => v.id === id ? { ...v, status: action } : v));
-    triggerToast(action === 'APPROVED' ? 'Esnaf kaydı onaylandı.' : 'Esnaf kaydı reddedildi.');
+  // PRİM ÇEKİM ONAY/REDDİ
+  const handlePayoutStatus = (id, status) => {
+    setPayoutRequests(payoutRequests.map(p => p.id === id ? { ...p, status } : p));
+    triggerToast(status === 'APPROVED' ? 'Ödeme talebi onaylandı.' : 'Ödeme talebi reddedildi.');
   };
 
-  const handleSendAnnouncement = (e) => {
-    e.preventDefault();
-    if (!announcement.trim()) return;
-    setAnnouncement('');
-    triggerToast('Duyuru tüm kullanıcılara yayınlandı.');
+  // EXCEL / CSV AKTARIMI
+  const exportToCSV = () => {
+    const headers = ['Kullanici,IBAN,Tutar(TL),Tarih,Durum\n'];
+    const rows = payoutRequests.map(p => 
+      `"${p.user}","${p.iban}",${p.amount},"${p.date}","${p.status}"\n`
+    );
+
+    const blob = new Blob([headers.concat(rows).join('')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Prim_Cekim_Talepleri_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    triggerToast('Prim talepleri Excel/CSV olarak indirildi.');
   };
 
   if (!isAuthenticated) {
@@ -105,196 +123,162 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12">
-      {/* ÜST BİLGİ & ÇIKIŞ BAR KARTI */}
+      {/* ÜST BAR */}
       <div className="bg-[#12355b] text-white p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold text-[#dbeafe] uppercase tracking-wider">Platform Yönetimi</span>
+          <span className="text-[11px] font-bold text-[#dbeafe] uppercase tracking-wider">Sistem Yönetimi</span>
           <h1 className="text-2xl font-black text-white mt-0.5 flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-emerald-400" /> Merkezi Yönetici Paneli
+            <ShieldCheck className="w-6 h-6 text-emerald-400" /> Tam Yetkili Yönetici Paneli
           </h1>
           <p className="text-xs text-[#dbeafe] mt-1">
-            Esnaf onayları, stok hareketleri, reklam yerleşimleri ve kullanıcı duyurularını tek ekrandan yönetin.
+            Prim tutarlarını, esnaf fiyatlandırmalarını ve para çekme taleplerini yönetin.
           </p>
         </div>
         <button
           onClick={() => setIsAuthenticated(false)}
           className="px-4 py-2 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-2 self-start md:self-auto cursor-pointer"
         >
-          <LogOut className="w-4 h-4" /> Güvenli Çıkış
+          <LogOut className="w-4 h-4" /> Çıkış Yap
         </button>
       </div>
 
-      {/* 1. İSTATİSTİK KARTLARI */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm">
-          <p className="text-xs font-bold text-[#5b6f82]">Toplam Esnaf Sayısı</p>
-          <p className="text-2xl font-black text-[#12355b] mt-1">1.284</p>
+      {/* 1. PRİM FİYATLARI VE ESNAF TARİFE AYARLARI */}
+      <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm">
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+          <TrendingUp className="w-5 h-5 text-[#12805c]" />
+          <h2 className="font-extrabold text-base text-[#12355b]">Prim & Fiyatlandırma Yönetimi</h2>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm">
-          <p className="text-xs font-bold text-[#5b6f82]">Aktif Stok Kalemi</p>
-          <p className="text-2xl font-black text-[#12355b] mt-1">36.942</p>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm">
-          <p className="text-xs font-bold text-[#5b6f82]">Günlük Canlı Stok Sorgusu</p>
-          <p className="text-2xl font-black text-[#12355b] mt-1">8.407</p>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm">
-          <p className="text-xs font-bold text-[#5b6f82]">Anlık Canlı Ziyaretçi</p>
-          <p className="text-2xl font-black text-[#12805c] mt-1">326</p>
+
+        <div className="grid sm:grid-cols-3 gap-4 text-xs">
+          <div className="p-3.5 bg-[#f4f7fb] rounded-xl border border-slate-200 space-y-2">
+            <label className="block font-bold text-[#18314c]">Standart Saha Görev Primi (₺)</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={pricing.baseReward}
+                onChange={(e) => setPricing({ ...pricing, baseReward: Number(e.target.value) })}
+                className="w-full p-2 bg-white border border-slate-200 rounded-lg font-bold text-[#12355b]"
+              />
+              <button
+                onClick={() => triggerToast('Standart prim güncellendi.')}
+                className="px-3 py-2 bg-[#12805c] text-white font-bold rounded-lg hover:bg-[#0f6b4d]"
+              >
+                Kaydet
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-[#f4f7fb] rounded-xl border border-slate-200 space-y-2">
+            <label className="block font-bold text-[#18314c]">Acil / Yüksek Görev Primi (₺)</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={pricing.urgentReward}
+                onChange={(e) => setPricing({ ...pricing, urgentReward: Number(e.target.value) })}
+                className="w-full p-2 bg-white border border-slate-200 rounded-lg font-bold text-[#12355b]"
+              />
+              <button
+                onClick={() => triggerToast('Acil prim güncellendi.')}
+                className="px-3 py-2 bg-[#12805c] text-white font-bold rounded-lg hover:bg-[#0f6b4d]"
+              >
+                Kaydet
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-[#f4f7fb] rounded-xl border border-slate-200 space-y-2">
+            <label className="block font-bold text-[#18314c]">Esnaf Aylık Üyelik Ücreti (₺)</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={pricing.merchantPackage}
+                onChange={(e) => setPricing({ ...pricing, merchantPackage: Number(e.target.value) })}
+                className="w-full p-2 bg-white border border-slate-200 rounded-lg font-bold text-[#12355b]"
+              />
+              <button
+                onClick={() => triggerToast('Esnaf paket fiyatı güncellendi.')}
+                className="px-3 py-2 bg-[#12355b] text-white font-bold rounded-lg hover:bg-[#0d2744]"
+              >
+                Kaydet
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 2. MODÜLLER (2 SÜTUNLU YAPI) */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* ESNAF ONAY & DOĞRULAMA */}
-        <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      {/* 2. PRİM ÇEKİM TALEPLERİ VE EXCEL/CSV AKTARIMI */}
+      <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
             <h2 className="font-extrabold text-base text-[#12355b] flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-[#12805c]" /> Esnaf Onay & Doğrulama
+              <Coins className="w-5 h-5 text-[#f58220]" /> Prim Çekim Talepleri
             </h2>
-            <span className="text-xs bg-[#effaf5] text-[#12805c] font-bold px-2.5 py-1 rounded-full">
-              2 Bekleyen Onay
-            </span>
+            <p className="text-xs text-[#5b6f82]">Kullanıcıların biriken prim çekim isteklerini yönetin.</p>
           </div>
 
-          <div className="space-y-3">
-            {verifications.map((v) => (
-              <div key={v.id} className="p-3.5 bg-[#f4f7fb] rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                <div>
-                  <h3 className="font-bold text-[#18314c]">{v.name}</h3>
-                  <p className="text-[#5b6f82] mt-0.5">{v.doc}</p>
-                </div>
-                {v.status === 'PENDING' ? (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => handleVerifyAction(v.id, 'APPROVED')}
-                      className="px-3 py-1.5 bg-[#12805c] hover:bg-[#0f6b4d] text-white font-bold rounded-lg transition-colors cursor-pointer"
-                    >
-                      Onayla
-                    </button>
-                    <button
-                      onClick={() => handleVerifyAction(v.id, 'REJECTED')}
-                      className="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded-lg transition-colors cursor-pointer"
-                    >
-                      Reddet
-                    </button>
-                  </div>
-                ) : (
-                  <span className={`font-bold px-2.5 py-1 rounded-md text-[11px] ${v.status === 'APPROVED' ? 'bg-emerald-100 text-[#12805c]' : 'bg-rose-100 text-rose-700'}`}>
-                    {v.status === 'APPROVED' ? 'Onaylandı' : 'Reddedildi'}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+          <button
+            onClick={exportToCSV}
+            className="px-4 py-2 bg-[#12805c] hover:bg-[#0f6b4d] text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2 cursor-pointer self-start sm:self-auto"
+          >
+            <Download className="w-4 h-4" /> Talepleri Excel / CSV'ye Aktar
+          </button>
         </div>
 
-        {/* DİLEK, ÖNERİ VE MÜŞTERİ YANITLARI */}
-        <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm space-y-4">
-          <div className="border-b border-slate-100 pb-3">
-            <h2 className="font-extrabold text-base text-[#12355b] flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-blue-600" /> Geri Bildirim Kutusu
-            </h2>
-          </div>
-
-          <div className="p-3.5 bg-[#f4f7fb] rounded-xl border border-slate-200 text-xs space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-[#18314c]">Selin K. (Müşteri)</span>
-              <span className="text-[10px] text-slate-400">Az önce</span>
-            </div>
-            <p className="text-[#5b6f82]">"Arama sonuçlarında ürünleri markaya göre filtreleme seçeneği eklenebilir mi?"</p>
-            <div className="flex gap-2 pt-1">
-              <input
-                type="text"
-                placeholder="Kullanıcıya yanıt yazın..."
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                className="flex-1 p-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-[#12355b]"
-              />
-              <button
-                onClick={() => { if(replyText){ setReplyText(''); triggerToast('Yanıt gönderildi.'); } }}
-                className="px-3 py-2 bg-[#12355b] hover:bg-[#0d2744] text-white font-bold rounded-lg transition-colors cursor-pointer"
-              >
-                Yanıtla
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* REKLAM VE SPONSORLU YERLEŞİM YÖNETİMİ */}
-        <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm space-y-4">
-          <div className="border-b border-slate-100 pb-3">
-            <h2 className="font-extrabold text-base text-[#12355b] flex items-center gap-2">
-              <LayoutGrid className="w-5 h-5 text-[#f58220]" /> Reklam & Sponsor Yerleşimleri
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-3 text-xs">
-            <div className="p-3 bg-[#f4f7fb] rounded-xl border border-slate-200">
-              <h3 className="font-bold text-[#18314c]">Ana Sayfa Banner Slider</h3>
-              <p className="text-[#5b6f82] mt-1">2 aktif kampanya görseli yayında.</p>
-              <button
-                onClick={() => triggerToast('Banner yönetim modülü açıldı.')}
-                className="mt-3 w-full py-1.5 bg-[#eaf1f7] hover:bg-[#d8e5f0] text-[#12355b] font-bold rounded-lg transition-colors cursor-pointer"
-              >
-                Slider'ı Yönet
-              </button>
-            </div>
-
-            <div className="p-3 bg-[#f4f7fb] rounded-xl border border-slate-200">
-              <h3 className="font-bold text-[#18314c]">Öne Çıkarılan Dükkanlar</h3>
-              <p className="text-[#5b6f82] mt-1">5 esnaf sponsorlu sırada.</p>
-              <button
-                onClick={() => triggerToast('Sponsor yerleşimleri güncellendi.')}
-                className="mt-3 w-full py-1.5 bg-[#eaf1f7] hover:bg-[#d8e5f0] text-[#12355b] font-bold rounded-lg transition-colors cursor-pointer"
-              >
-                Yerleşimleri Düzenle
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* TOPLU DUYURU VE ENGELLEME YÖNETİMİ */}
-        <div className="bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm space-y-4">
-          <div className="border-b border-slate-100 pb-3">
-            <h2 className="font-extrabold text-base text-[#12355b] flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-rose-600" /> Toplu Duyuru & Hesap İşlemleri
-            </h2>
-          </div>
-
-          <form onSubmit={handleSendAnnouncement} className="space-y-3 text-xs">
-            <div>
-              <label className="block text-[#18314c] font-bold mb-1">Tüm Platforma Duyuru Yayınla</label>
-              <textarea
-                rows={3}
-                value={announcement}
-                onChange={(e) => setAnnouncement(e.target.value)}
-                placeholder="Örn: Sistem güncellemesi nedeniyle yarın 03:00-04:00 arası bakım çalışması yapılacaktır."
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#12355b]"
-              />
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[#12355b] hover:bg-[#0d2744] text-white font-bold rounded-xl transition-colors cursor-pointer"
-              >
-                Duyuruyu Yayınla
-              </button>
-              <button
-                type="button"
-                onClick={() => triggerToast('Riskli hesap engelleme ekranı açıldı.')}
-                className="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <Ban className="w-3.5 h-3.5" /> Hesap Engelle / Askıya Al
-              </button>
-            </div>
-          </form>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-[#f4f7fb] text-[#12355b] font-extrabold border-b border-slate-200">
+                <th className="p-3 rounded-l-xl">Kullanıcı</th>
+                <th className="p-3">IBAN Numarası</th>
+                <th className="p-3">Tutar</th>
+                <th className="p-3">Tarih</th>
+                <th className="p-3">Durum</th>
+                <th className="p-3 rounded-r-xl text-right">Aksiyon</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-semibold text-[#18314c]">
+              {payoutRequests.map((req) => (
+                <tr key={req.id} className="hover:bg-slate-50">
+                  <td className="p-3">{req.user}</td>
+                  <td className="p-3 font-mono text-[11px] text-slate-600">{req.iban}</td>
+                  <td className="p-3 font-bold text-[#12805c]">{req.amount} ₺</td>
+                  <td className="p-3 text-slate-500">{req.date}</td>
+                  <td className="p-3">
+                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
+                      req.status === 'APPROVED' ? 'bg-emerald-100 text-[#12805c]' :
+                      req.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {req.status === 'APPROVED' ? 'Ödendi' : req.status === 'REJECTED' ? 'Reddedildi' : 'Bekliyor'}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right">
+                    {req.status === 'PENDING' && (
+                      <div className="flex justify-end gap-1.5">
+                        <button
+                          onClick={() => handlePayoutStatus(req.id, 'APPROVED')}
+                          className="px-2.5 py-1 bg-[#12805c] hover:bg-[#0f6b4d] text-white rounded-md font-bold text-[11px]"
+                        >
+                          Onayla
+                        </button>
+                        <button
+                          onClick={() => handlePayoutStatus(req.id, 'REJECTED')}
+                          className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-md font-bold text-[11px]"
+                        >
+                          Red
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
       {/* TOAST BİLDİRİMİ */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 bg-[#12355b] text-white text-xs font-bold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-3 z-50">
+        <div className="fixed bottom-6 right-6 bg-[#12355b] text-white text-xs font-bold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in z-50">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {toastMsg}
         </div>
       )}
