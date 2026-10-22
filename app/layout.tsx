@@ -3,7 +3,7 @@
 import './globals.css';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Store, Search, Gift, Home, User, LogIn, ShieldCheck, Settings, LogOut, Menu, X } from 'lucide-react';
+import { Store, Search, Gift, Home, User, LogIn, ShieldCheck, Settings, LogOut, Menu, X, HelpCircle} from 'lucide-react';
 import HeaderAndChat from '../components/HeaderAndChat';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
