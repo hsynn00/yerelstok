@@ -77,6 +77,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <p className="text-[10px] text-[#5b6f82]">Saha Primcisi (Doğrulanmış)</p>
                       </div>
                       <Link
+                        href="/settings"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#18314c] hover:bg-[#f4f7fb] flex items-center gap-2"
+                      >
+                        <Settings className="w-4 h-4 text-slate-500" /> Dükkan Ayarları
+                      </Link>
+                      <Link
+                       href="/support"
+                       onClick={() => setShowProfileMenu(false)}
+                       className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#18314c] hover:bg-[#f4f7fb] flex items-center gap-2"
+                      >
+                       <HelpCircle className="w-4 h-4 text-slate-500" /> İletişim & Destek
+                      </Link>
+                      <Link
+                       href="/admin"
+                       onClick={() => setShowProfileMenu(false)}
+                       className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-[#12355b] hover:bg-[#eaf1f7] flex items-center gap-2 border-t border-slate-100 mt-1 pt-2"
+                      >
+                       <ShieldCheck className="w-4 h-4 text-emerald-700" /> Yönetici Paneli
+                      </Link>
+                      <Link
                         href="/prim"
                         onClick={() => setShowProfileMenu(false)}
                         className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#18314c] hover:bg-[#f4f7fb] flex items-center gap-2"
