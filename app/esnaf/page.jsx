@@ -29,7 +29,6 @@ export default function MerchantPage() {
     setTimeout(() => setToastMsg(''), 3000);
   };
 
-  // Dükkan İletişim Bilgileri
   const [shopData, setShopData] = useState({
     shopName: 'Yılmaz Oto Yedek Parça',
     phone: '0532 555 11 22',
@@ -37,26 +36,21 @@ export default function MerchantPage() {
     taxOffice: 'Kadıköy V.D.',
   });
 
-  // Manuel Ürün Formu
   const [manualForm, setManualForm] = useState({ name: '', code: '', count: '' });
 
-  // Dinamik Stok Listesi (Son güncelleme zamanı ile)
   const [products, setProducts] = useState([
     { id: 1, name: 'Fren Balatası', code: 'FB-2024-18', count: 24, unit: 'adet', lastUpdated: '10 dk önce' },
     { id: 2, name: 'Matkap Ucu Seti', code: 'MU-8PCS', count: 8, unit: 'adet', lastUpdated: '1 saat önce' },
     { id: 3, name: '2.5 mm Kablo', code: 'KBL-25-B', count: 120, unit: 'm', lastUpdated: '3 gün önce (Doğrulanmadı)' },
   ]);
 
-  // Silme Onay Modal State'i
   const [deleteModalId, setDeleteModalId] = useState(null);
 
-  // Canlı Müşteri Talepleri ve Gelişmiş Yanıtlar
   const [requests, setRequests] = useState([
-    { id: 1, name: 'Mert A.', query: 'Honda Civic 2012 ön fren balatası var mı?', status: 'BEKLIYOR', responseText: '' },
-    { id: 2, name: 'Selin K.', query: '10 mm matkap ucu seti bugün teslim alınabilir mi?', status: 'BEKLIYOR', responseText: '' },
+    { id: 1, name: 'Mert A.', query: 'Honda Civic 2012 ön fren balatası var mı?', status: 'BEKLIYOR', customReply: '', tempReply: '' },
+    { id: 2, name: 'Selin K.', query: '10 mm matkap ucu seti bugün teslim alınabilir mi?', status: 'BEKLIYOR', customReply: '', tempReply: '' },
   ]);
 
-  // Stok Ekleme
   const handleAddProduct = (e) => {
     e.preventDefault();
     if (!manualForm.name || !manualForm.count) return;
@@ -75,7 +69,6 @@ export default function MerchantPage() {
     triggerToast('Ürün başarıyla stoğa eklendi.');
   };
 
-  // Stok Miktarı Artır / Azalt (+ / -)
   const handleUpdateCount = (id, delta) => {
     setProducts(
       products.map((p) => {
@@ -88,14 +81,12 @@ export default function MerchantPage() {
     );
   };
 
-  // Gerçek Silme Onayı
   const confirmDeleteProduct = (id) => {
     setProducts(products.filter((p) => p.id !== id));
     setDeleteModalId(null);
     triggerToast('Ürün listeden silindi.');
   };
 
-  // Gelişmiş Talep Yanıtlama
   const handleAnswerRequest = (id, answerType) => {
     setRequests(
       requests.map((r) => {
@@ -232,7 +223,7 @@ export default function MerchantPage() {
         </div>
       </div>
 
-      {/* 3. AKTİF STOK LİSTESİ (+ / - BUTONLARI VE SON GÜNCELLEME İLE) */}
+      {/* 3. AKTİF STOK LİSTESİ */}
       <div className="grid lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7 bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm">
           <div className="flex justify-between items-center mb-4">
@@ -256,7 +247,6 @@ export default function MerchantPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* + / - ADET DÜZENLEME BUTONLARI */}
                   <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
                     <button
                       onClick={() => handleUpdateCount(p.id, -1)}
@@ -290,90 +280,91 @@ export default function MerchantPage() {
           </div>
         </div>
 
+        {/* 4. GELİŞMİŞ CANLI STOK SORULARI VE SOHBET */}
         <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm">
-    <div className="flex items-center justify-between mb-1">
-      <h2 className="font-extrabold text-base text-[#12355b] flex items-center gap-2">
-        <Bell className="w-4 h-4 text-[#f58220] animate-bounce" /> Gelen Canlı Stok Soruları & Sohbet
-      </h2>
-    </div>
-    <p className="text-xs text-[#5b6f82] mb-4">Müşterinin sorusuna hızlı butonlarla yanıt verin veya altındaki sohbet alanından özel mesaj yazın.</p>
-
-    <div className="space-y-4">
-      {requests.map((r) => (
-        <div key={r.id} className="p-4 bg-[#f4f7fb] rounded-2xl border border-slate-200 space-y-3">
-          <div>
-            <div className="flex justify-between items-center">
-              <span className="font-extrabold text-xs text-[#18314c]">{r.name} (Müşteri)</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${r.status !== 'BEKLIYOR' ? 'bg-emerald-100 text-[#12805c]' : 'bg-amber-100 text-amber-800'}`}>
-                {r.status === 'BEKLIYOR' ? 'Yeni Soru' : 'Yanıtlandı'}
-              </span>
-            </div>
-            <p className="text-xs text-[#12355b] font-semibold mt-1">"{r.query}"</p>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="font-extrabold text-base text-[#12355b] flex items-center gap-2">
+              <Bell className="w-4 h-4 text-[#f58220] animate-bounce" /> Gelen Canlı Stok Soruları & Sohbet
+            </h2>
           </div>
+          <p className="text-xs text-[#5b6f82] mb-4">Müşterinin sorusuna butonlarla yanıt verin veya alttaki sohbetten mesaj yazın.</p>
 
-          {/* HIZLI YANIT BUTONLARI */}
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              onClick={() => handleAnswerRequest(r.id, 'Stokta Var')}
-              className="py-1.5 bg-[#12805c] hover:bg-[#0f6b4d] text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-            >
-              ✓ Var (Stokta)
-            </button>
-            <button
-              onClick={() => handleAnswerRequest(r.id, 'Son 2 Adet Kaldı')}
-              className="py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-            >
-              ⚡ Son 2 Adet Kaldı
-            </button>
-            <button
-              onClick={() => handleAnswerRequest(r.id, '2 Saat İçinde Gelir')}
-              className="py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-            >
-              ⏱ 2 Saat İçinde Gelir
-            </button>
-            <button
-              onClick={() => handleAnswerRequest(r.id, 'Stok Tükendi')}
-              className="py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-            >
-              ✕ Yok / Tükendi
-            </button>
-          </div>
+          <div className="space-y-4">
+            {requests.map((r) => (
+              <div key={r.id} className="p-4 bg-[#f4f7fb] rounded-2xl border border-slate-200 space-y-3">
+                <div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-extrabold text-xs text-[#18314c]">{r.name} (Müşteri)</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${r.status !== 'BEKLIYOR' ? 'bg-emerald-100 text-[#12805c]' : 'bg-amber-100 text-amber-800'}`}>
+                      {r.status === 'BEKLIYOR' ? 'Yeni Soru' : 'Yanıtlandı'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#12355b] font-semibold mt-1">"{r.query}"</p>
+                </div>
 
-          {/* ESNAFIN ÖZEL MESAJ YAZACAĞI SOHBET KISMI */}
-          <div className="pt-2 border-t border-slate-200/60 space-y-2">
-            {r.customReply ? (
-              <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-[#12805c] font-semibold">
-                <strong>Gönderilen Mesajınız:</strong> "{r.customReply}"
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    onClick={() => handleAnswerRequest(r.id, 'Stokta Var')}
+                    className="py-1.5 bg-[#12805c] hover:bg-[#0f6b4d] text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    ✓ Var (Stokta)
+                  </button>
+                  <button
+                    onClick={() => handleAnswerRequest(r.id, 'Son 2 Adet Kaldı')}
+                    className="py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    ⚡ Son 2 Adet Kaldı
+                  </button>
+                  <button
+                    onClick={() => handleAnswerRequest(r.id, '2 Saat İçinde Gelir')}
+                    className="py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    ⏱ 2 Saat İçinde Gelir
+                  </button>
+                  <button
+                    onClick={() => handleAnswerRequest(r.id, 'Stok Tükendi')}
+                    className="py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    ✕ Yok / Tükendi
+                  </button>
+                </div>
+
+                {/* ÖZEL SOHBET / MESAJ KISMI */}
+                <div className="pt-2 border-t border-slate-200/60 space-y-2">
+                  {r.customReply ? (
+                    <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-[#12805c] font-semibold">
+                      <strong>Gönderilen Mesajınız:</strong> "{r.customReply}"
+                    </div>
+                  ) : (
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="Müşteriye özel mesaj/fiyat yazın..."
+                        value={r.tempReply || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setRequests(requests.map(item => item.id === r.id ? { ...item, tempReply: val } : item));
+                        }}
+                        className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[#12355b] font-medium"
+                      />
+                      <button
+                        onClick={() => {
+                          if (!r.tempReply) return;
+                          setRequests(requests.map(item => item.id === r.id ? { ...item, customReply: r.tempReply, status: 'Özel Mesaj Gönderildi' } : item));
+                          triggerToast('Özel mesaj müşteriye iletildi.');
+                        }}
+                        className="px-3 py-2 bg-[#12355b] hover:bg-[#0d2744] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                      >
+                        Gönder
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            ) : (
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  placeholder="Müşteriye özel mesaj/fiyat yazın..."
-                  value={r.tempReply || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setRequests(requests.map(item => item.id === r.id ? { ...item, tempReply: val } : item));
-                  }}
-                  className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[#12355b] font-medium"
-                />
-                <button
-                  onClick={() => {
-                    if (!r.tempReply) return;
-                    setRequests(requests.map(item => item.id === r.id ? { ...item, customReply: r.tempReply, status: 'Özel Mesaj Gönderildi' } : item));
-                    triggerToast('Özel mesaj müşteriye iletildi.');
-                  }}
-                  className="px-3 py-2 bg-[#12355b] hover:bg-[#0d2744] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                >
-                  Gönder
-                </button>
-              </div>
-            )}
+            ))}
           </div>
         </div>
-      ))}
-    </div>
-  </div>
+      </div>
 
       {/* SİLME ONAY MODALI */}
       {deleteModalId && (
@@ -404,7 +395,6 @@ export default function MerchantPage() {
         </div>
       )}
 
-      {/* DÜKKAN DÜZENLEME MODALI */}
       <MerchantEditModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
