@@ -290,65 +290,90 @@ export default function MerchantPage() {
           </div>
         </div>
 
-        {/* 4. GELİŞMİŞ CANLI STOK SORULARI (DETAYLI YANIT SEÇENEKLERİ) */}
         <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-[#dfe8f1] shadow-sm">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="font-extrabold text-base text-[#12355b] flex items-center gap-2">
-              <Bell className="w-4 h-4 text-[#f58220] animate-bounce" /> Gelen Canlı Stok Soruları
-            </h2>
+    <div className="flex items-center justify-between mb-1">
+      <h2 className="font-extrabold text-base text-[#12355b] flex items-center gap-2">
+        <Bell className="w-4 h-4 text-[#f58220] animate-bounce" /> Gelen Canlı Stok Soruları & Sohbet
+      </h2>
+    </div>
+    <p className="text-xs text-[#5b6f82] mb-4">Müşterinin sorusuna hızlı butonlarla yanıt verin veya altındaki sohbet alanından özel mesaj yazın.</p>
+
+    <div className="space-y-4">
+      {requests.map((r) => (
+        <div key={r.id} className="p-4 bg-[#f4f7fb] rounded-2xl border border-slate-200 space-y-3">
+          <div>
+            <div className="flex justify-between items-center">
+              <span className="font-extrabold text-xs text-[#18314c]">{r.name} (Müşteri)</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${r.status !== 'BEKLIYOR' ? 'bg-emerald-100 text-[#12805c]' : 'bg-amber-100 text-amber-800'}`}>
+                {r.status === 'BEKLIYOR' ? 'Yeni Soru' : 'Yanıtlandı'}
+              </span>
+            </div>
+            <p className="text-xs text-[#12355b] font-semibold mt-1">"{r.query}"</p>
           </div>
-          <p className="text-xs text-[#5b6f82] mb-4">Müşterilerin sorularına detaylı seçeneklerle anında yanıt verin.</p>
 
-          <div className="space-y-3">
-            {requests.map((r) => (
-              <div key={r.id} className="p-3.5 bg-[#f4f7fb] rounded-xl border border-slate-200 space-y-2.5">
-                <div>
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-xs text-[#18314c]">{r.name}</h3>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${r.status !== 'BEKLIYOR' ? 'bg-emerald-100 text-[#12805c]' : 'bg-amber-100 text-amber-800'}`}>
-                      {r.status === 'BEKLIYOR' ? 'Yeni Soru' : `Yanıtlandı: ${r.status}`}
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#5b6f82] mt-1">{r.query}</p>
-                </div>
+          {/* HIZLI YANIT BUTONLARI */}
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              onClick={() => handleAnswerRequest(r.id, 'Stokta Var')}
+              className="py-1.5 bg-[#12805c] hover:bg-[#0f6b4d] text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+            >
+              ✓ Var (Stokta)
+            </button>
+            <button
+              onClick={() => handleAnswerRequest(r.id, 'Son 2 Adet Kaldı')}
+              className="py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+            >
+              ⚡ Son 2 Adet Kaldı
+            </button>
+            <button
+              onClick={() => handleAnswerRequest(r.id, '2 Saat İçinde Gelir')}
+              className="py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+            >
+              ⏱ 2 Saat İçinde Gelir
+            </button>
+            <button
+              onClick={() => handleAnswerRequest(r.id, 'Stok Tükendi')}
+              className="py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+            >
+              ✕ Yok / Tükendi
+            </button>
+          </div>
 
-                {r.status === 'BEKLIYOR' ? (
-                  <div className="grid grid-cols-2 gap-1.5 pt-1">
-                    <button
-                      onClick={() => handleAnswerRequest(r.id, 'Stokta Var')}
-                      className="py-1.5 bg-[#12805c] hover:bg-[#0f6b4d] text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-                    >
-                      ✓ Var (Stokta)
-                    </button>
-                    <button
-                      onClick={() => handleAnswerRequest(r.id, 'Son 2 Adet Kaldı')}
-                      className="py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-                    >
-                      ⚡ Son 2 Adet Kaldı
-                    </button>
-                    <button
-                      onClick={() => handleAnswerRequest(r.id, '2 Saat İçinde Gelir')}
-                      className="py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-                    >
-                      ⏱ 2 Saat İçinde Gelir
-                    </button>
-                    <button
-                      onClick={() => handleAnswerRequest(r.id, 'Stok Tükendi')}
-                      className="py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-                    >
-                      ✕ Yok / Tükendi
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-[11px] font-bold text-[#12805c] bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-                    Müşteriye bildirildi: "{r.status}"
-                  </p>
-                )}
+          {/* ESNAFIN ÖZEL MESAJ YAZACAĞI SOHBET KISMI */}
+          <div className="pt-2 border-t border-slate-200/60 space-y-2">
+            {r.customReply ? (
+              <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-[#12805c] font-semibold">
+                <strong>Gönderilen Mesajınız:</strong> "{r.customReply}"
               </div>
-            ))}
+            ) : (
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  placeholder="Müşteriye özel mesaj/fiyat yazın..."
+                  value={r.tempReply || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRequests(requests.map(item => item.id === r.id ? { ...item, tempReply: val } : item));
+                  }}
+                  className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[#12355b] font-medium"
+                />
+                <button
+                  onClick={() => {
+                    if (!r.tempReply) return;
+                    setRequests(requests.map(item => item.id === r.id ? { ...item, customReply: r.tempReply, status: 'Özel Mesaj Gönderildi' } : item));
+                    triggerToast('Özel mesaj müşteriye iletildi.');
+                  }}
+                  className="px-3 py-2 bg-[#12355b] hover:bg-[#0d2744] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Gönder
+                </button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      ))}
+    </div>
+  </div>
 
       {/* SİLME ONAY MODALI */}
       {deleteModalId && (
