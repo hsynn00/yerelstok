@@ -3,19 +3,20 @@
 import './globals.css';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Store, User, ShieldCheck, Settings, LogOut, HelpCircle, Gift, History, MessageSquare, Phone } from 'lucide-react';
+import { Store, User, ShieldCheck, LogOut, Gift, History, MessageSquare } from 'lucide-react';
 import HeaderAndChat from '../components/HeaderAndChat';
 import SmsVerificationModal from '../components/SmsVerificationModal';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<'USER' | 'MERCHANT' | 'PRIMER' | null>(null); // 'USER' | 'MERCHANT' | 'PRIMER'
+  const [userRole, setUserRole] = useState<'USER' | 'MERCHANT' | 'PRIMER' | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [currency, setCurrency] = useState<'TL' | 'USD' | 'EUR'>('TL');
+  const currency = 'TL';
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [pendingRole, setPendingRole] = useState<'USER' | 'MERCHANT' | 'PRIMER'>('USER');
 
-  const handleLoginTrigger = (role) => {
+  // TypeScript Hata Çözümü: role parametresine tip eklendi
+  const handleLoginTrigger = (role: 'USER' | 'MERCHANT' | 'PRIMER') => {
     setPendingRole(role);
     setIsLoginModalOpen(true);
     setShowProfileMenu(false);
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="bg-white border-b border-[#dfe8f1] sticky top-0 z-50 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
             
-            {/* LOGO - VAR MI (Sadece Ana Sayfaya Yönlendirir) */}
+            {/* LOGO */}
             <Link href="/" className="flex items-center gap-2 shrink-0">
               <div className="w-9 h-9 rounded-xl bg-[#12355b] flex items-center justify-center text-white shadow-md">
                 <Store className="w-5 h-5" />
@@ -47,7 +48,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="font-extrabold text-2xl text-[#12355b] tracking-tight">Var Mı</span>
             </Link>
 
-            {/* ORTA KISIM TEMİZ: Ziyaretçi doğrudan ana sayfada arama yapar */}
             <div className="hidden md:flex items-center text-xs font-semibold text-[#5b6f82]">
               <span>Sanayi ve Hırdavat Esnafı Canlı Stok Arama Platformu</span>
             </div>
@@ -74,7 +74,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <p className="text-[10px] text-[#5b6f82]">Birim: <strong className="text-[#12805c]">{currency}</strong></p>
                   </div>
 
-                  {/* GİRİŞ YAPILMADIYSA GİRİŞ SEÇENEKLERİ */}
                   {!isLoggedIn ? (
                     <div className="space-y-1.5 pt-1">
                       <button
@@ -98,7 +97,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </div>
                   ) : (
                     <div className="space-y-1 pt-1">
-                      {/* NORMAL KULLANICI / GEÇMİŞ / SOHBETLER */}
                       {userRole === 'USER' && (
                         <>
                           <Link
@@ -117,14 +115,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                           </Link>
                           <button
                             onClick={() => { setUserRole('PRIMER'); setShowProfileMenu(false); }}
-                            className="w-full text-left px-2.5 py-2 rounded-xl text-xs font-bold text-[#f58220] hover:bg-[#fff1e4] flex items-center gap-2 border-t border-slate-100 mt-1 pt-2"
+                            className="w-full text-left px-2.5 py-2 rounded-xl text-xs font-bold text-[#f58220] hover:bg-[#fff1e4] flex items-center gap-2 border-t border-slate-100 mt-1 pt-2 cursor-pointer"
                           >
                             <Gift className="w-4 h-4" /> Prim Paneline Geçiş Yap
                           </button>
                         </>
                       )}
 
-                      {/* ESNAF PANELİ (Sadece Esnaf Görür) */}
                       {userRole === 'MERCHANT' && (
                         <Link
                           href="/esnaf"
@@ -135,7 +132,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         </Link>
                       )}
 
-                      {/* KULLANICI & PRİM PANELİ (Sadece Primci/Kullanıcı Görür, Esnaf Göremez) */}
                       {userRole === 'PRIMER' && (
                         <Link
                           href="/prim"
@@ -174,7 +170,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6">{children}</main>
         <HeaderAndChat />
 
-        {/* SMS DOĞRULAMA MODALI */}
         <SmsVerificationModal
           isOpen={isLoginModalOpen}
           onClose={() => setIsLoginModalOpen(false)}
